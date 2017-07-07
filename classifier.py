@@ -2,20 +2,6 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-
-trainloader = torch.utils.data.DataLoader(trainset,
-                                          batch_size=4, shuffle=True, num_workers=2)
-
-testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-
-testloader = torch.utils.data.DataLoader(testset, batch_size=4,
-                                         shuffle=False, num_workers=2)
-
-classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 
 from torch.autograd import Variable
@@ -46,76 +32,94 @@ net.cuda()
 
 import torch.optim as optim
 
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+if __name__ == '__main__':
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-train = False
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
 
-if train:
-    for epoch in range(2):
-        running_loss = 0.0
+    trainloader = torch.utils.data.DataLoader(trainset,
+                                              batch_size=4, shuffle=True, num_workers=2)
 
-        for i, data in enumerate(trainloader, 0):
-            inputs, labels = data
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
-            #inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
-            inputs, labels = Variable(inputs), Variable(labels)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+                                             shuffle=False, num_workers=2)
 
-            optimizer.zero_grad()
+    classes = ('plane', 'car', 'bird', 'cat',
+               'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
-            output = net(inputs)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-            loss = criterion(output, labels)
+    train = False
 
+    if train:
+        for epoch in range(2):
+            running_loss = 0.0
 
-            loss.backward()
+            for i, data in enumerate(trainloader, 0):
+                inputs, labels = data
 
-            optimizer.step()
+                inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+                #inputs, labels = Variable(inputs), Variable(labels)
 
-            running_loss += loss.data[0]
+                optimizer.zero_grad()
 
-            if i % 2000 == 1999:
-                print('[%d, %5d] loss: %.3f' %
-                    (epoch + 1, i + 1, running_loss / 2000))
+                output = net(inputs)
 
-                running_loss = 0.0
-
-    print('Finished Training')
-
-    torch.save(net.state_dict(), 'cifar-10-model')
-
-net.load_state_dict(torch.load('cifar-10-model'))
-
-correct = 0
-total = 0
-
-class_correct = list(0. for i in range(10))
-class_total = list(0. for i in range(10))
+                loss = criterion(output, labels)
 
 
-for i, data in enumerate(testloader, 0):
-    inputs, labels = data
+                loss.backward()
 
-    #inputs, data = Variable(inputs.cuda()), Variable(data.cuda())
-    images = Variable(inputs)
+                optimizer.step()
 
-    output = net(images)
+                running_loss += loss.data[0]
 
-    _, predicted = torch.max(output.data, 1)
-    c = (predicted == labels).squeeze()
-    for i in range(4):
-        label = labels[i]
-        class_correct[label] += c[i]
-        class_total[label] += 1
-        total += 1
-        correct += c[i]
+                if i % 2000 == 1999:
+                    print('[%d, %5d] loss: %.3f' %
+                        (epoch + 1, i + 1, running_loss / 2000))
 
-print('Total test accuracy : %d %%' %
-      (100 * correct / total))
+                    running_loss = 0.0
 
-for i in range(10):
-    print('Accuracy of %5s : %2d %%' %
-          (classes[i], 100 * class_correct[i] / class_total[i]))
+        print('Finished Training')
+
+        torch.save(net.state_dict(), 'cifar-10-model')
+
+    net.load_state_dict(torch.load('cifar-10-model'))
+
+    correct = 0
+    total = 0
+
+    class_correct = list(0. for i in range(10))
+    class_total = list(0. for i in range(10))
+
+
+    for i, data in enumerate(testloader, 0):
+        inputs, labels = data
+        inputs, targets = data
+
+        images = Variable(inputs.cuda())
+        labels = Variable(labels.cuda())
+        #images = Variable(inputs)
+
+        output = net(images)
+
+        _, predicted = torch.max(output.data, 1)
+        c = predicted.eq(labels.data).squeeze()
+        for i in range(4):
+            label = targets[i]
+            class_correct[label] += c[i]
+            class_total[label] += 1
+            total += 1
+            correct += c[i]
+
+    print('Total test accuracy : %d %%' %
+          (100 * correct / total))
+
+    for i in range(10):
+        print('Accuracy of %5s : %2d %%' %
+              (classes[i], 100 * class_correct[i] / class_total[i]))
 
 
 
