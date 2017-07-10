@@ -51,7 +51,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    train = False
+    train = True
 
     if train:
         for epoch in range(2):
