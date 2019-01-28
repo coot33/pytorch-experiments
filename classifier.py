@@ -28,7 +28,7 @@ class Net(nn.Module):
         return x
 
 net = Net()
-net.cuda()
+
 
 import torch.optim as optim
 
@@ -60,7 +60,7 @@ if __name__ == '__main__':
             for i, data in enumerate(trainloader, 0):
                 inputs, labels = data
 
-                inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+                inputs, labels = Variable(inputs), Variable(labels)
                 #inputs, labels = Variable(inputs), Variable(labels)
 
                 optimizer.zero_grad()
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
                 optimizer.step()
 
-                running_loss += loss.data[0]
+                running_loss += loss.item()
 
                 if i % 2000 == 1999:
                     print('[%d, %5d] loss: %.3f' %
@@ -99,8 +99,8 @@ if __name__ == '__main__':
         inputs, labels = data
         inputs, targets = data
 
-        images = Variable(inputs.cuda())
-        labels = Variable(labels.cuda())
+        images = Variable(inputs)
+        labels = Variable(labels)
         #images = Variable(inputs)
 
         output = net(images)
